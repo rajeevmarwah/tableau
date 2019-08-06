@@ -1,0 +1,48 @@
+Select "Type", 
+       "Workbook Name", 
+       "Datasource ID", 
+       "Datasource Name", 
+       "Datasource Size KB", 
+       "DB Class", 
+      "Site ID", 
+       "Site Name" 
+From( 
+Select 'Server Datasource' as "Type", 
+       (Select W.Name From Workbooks W Where W.Id = D.Parent_Workbook_id) As "Workbook Name", 
+       D.ID AS "Datasource ID", 
+       D.Name As "Datasource Name", 
+       D.Size As"Datasource Size KB", 
+       D.DB_Class AS "DB Class", 
+       S.ID As "Site ID", 
+       S.Name As "Site Name" 
+From Datasources D, 
+     Data_Connections DC, 
+     Sites S, 
+(Select D1.Name -- Max(D1.created_at) As created_at 
+ From Datasources D1, Data_Connections DC1 Where DC1.datasource_id = D1.id 
+  And DC1.Owner_type = 'Workbook' And D1.db_class = 'sqlproxy' Group by D1.Name) Dat 
+Where 1=1 
+And D.Name = Dat.Name 
+-- And D.created_at = Dat.created_at 
+And DC.datasource_id = D.id 
+And D.Site_id = S.ID and S.name='TRINET' 
+Union 
+Select 'Embedded Datasource' as "Type", 
+       (Select W.Name From Workbooks W Where W.Id = D.Parent_Workbook_id) As "Workbook Name", 
+      D.ID AS "Datasource ID", 
+       D.Name As "Datasource Name", 
+      D.Size As "Datasource Size KB", 
+       D.DB_Class AS "DB Class", 
+       S.ID As "Site ID", 
+       S.Name As "Site Name" 
+From Datasources D, 
+     Data_Connections DC, 
+     Sites S, 
+(Select D1.Name, Max(D1.created_at) As created_at From Datasources D1, Data_Connections DC1 
+ Where DC1.datasource_id = D1.id And DC1.Owner_type = 'Workbook' And D1.db_class != 'sqlproxy' Group by D1.Name) Dat 
+Where 1=1 
+And D.Name = Dat.Name 
+And D.created_at = Dat.created_at 
+And DC.datasource_id = D.id 
+And D.Site_id = S.id 
+ ) As T 
